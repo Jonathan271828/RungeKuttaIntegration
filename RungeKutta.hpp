@@ -10,7 +10,7 @@
                     
 
 
-#ifndef USEDOUBLES
+#ifdef USEDOUBLES
 typedef double Real;
 #else
 typedef float Real;
@@ -32,13 +32,14 @@ class RungeKutta{
 		Real TimeStep;
 		Real NumberTimeSteps;
 		std::vector<std::vector<Real>> Positions;
-		std::vector<Real> Velocities;
+		std::vector<std::vector<Real>> Velocities;
                 void GenerateRandomVelos( void );
 		bool InitVeloSet;
                 void ComputeSingleTimeStep( const std::vector<Real>& PositionsOld , 
-		                               std::vector<Real>& Positions ,
-		                               std::vector<Real>& Velocity , Real time ,
-		                               std::function<Real( Real , Real , Real )> Force );
+		                            std::vector<Real>& Positions ,
+                                            const std::vector<Real>& VelocitiesOld , 
+		                            std::vector<Real>& Velocities , Real time ,
+		                            std::function<Real( Real , Real , Real )> Force );
 
 
 
@@ -54,5 +55,7 @@ class RungeKutta{
 		void Integrate( std::function< double( Real , Real , Real )> Force );
 		void SetInitialVelocities( std::vector<Real>& InitVelos );
                 void WriteOutput( std::string fname );
+		std::vector<std::vector<Real>> GivePositions( void );
+		std::vector<std::vector<Real>> GiveVelocities( void );
 
 };

@@ -15,9 +15,10 @@ RungeKutta::RungeKutta( Real x1, Real x2 , Real ts , unsigned int N , unsigned i
 
 	Real dx = ( xmax - xmin ) / Nbins;
 	Positions.resize( NumberTimeSteps );
-	Velocities.resize( Nbins );
+	Velocities.resize( NumberTimeSteps );
 	for ( auto i = 0 ; i < NumberTimeSteps ; i++ ){
 		Positions[ i ].resize( Nbins );
+		Velocities[ i ].resize( Nbins );
 		// set initial positions
 	}
 	for ( auto i = 0 ; i < Nbins ; i++ ){
@@ -68,7 +69,10 @@ void RungeKutta::Integrate( std::function<Real( Real , Real , Real )> Force ){
 	Real time = 0;
 	for ( auto i = 1 ; i < NumberTimeSteps ; i++ ){
 		ComputeSingleTimeStep( Positions[i-1] , 
-				       Positions[i] , Velocities , time , Force );
+				       Positions[i] , 
+				       Velocities[i-1] ,
+				       Velocities[i] ,
+				       time , Force );
 		time  =  time  +  TimeStep;
 	}
 }
@@ -77,7 +81,8 @@ void RungeKutta::Integrate( std::function<Real( Real , Real , Real )> Force ){
 
 void RungeKutta::ComputeSingleTimeStep( const std::vector<Real>& PositionsOld , 
 		                        std::vector<Real>& Positions ,
-		                        std::vector<Real>& Velocity , Real time ,
+                                        const std::vector<Real>& VelocitiesOld , 
+		                        std::vector<Real>& Velocities , Real time ,
 		                        std::function<Real( Real , Real , Real )> Force ){
 
 
@@ -86,21 +91,23 @@ void RungeKutta::ComputeSingleTimeStep( const std::vector<Real>& PositionsOld ,
 	// compute velocities
 	for ( auto i = 0 ; i < Nbins ; i++ ){
 		Real TstepHalf  = time + TimeStep * 0.5;
-		Real force = Force( PositionsOld[i] , Velocity[i] , time );
+		Real force = Force( PositionsOld[i] , VelocitiesOld[i] , time );
 		Real v1  =  force * TimeStep;
 		Real k1  =  TimeStep * v1;
-		std::cout << v1 << "  " << k1 << std::endl;
-		force    =  Force( PositionsOld[i] + 0.5*k1 , Velocity[i] + 0.5*v1 , TstepHalf );
+		force    =  Force( PositionsOld[i] + 0.5*k1 , 
+				   VelocitiesOld[i] + 0.5*v1 , TstepHalf );
 		Real v2  =  force * TimeStep;
 		Real k2  =  TimeStep * v2;
-		force    =  Force( PositionsOld[i] + 0.5*k2 , Velocity[i] + 0.5*v2 , TstepHalf );
+		force    =  Force( PositionsOld[i] + 0.5*k2 , 
+				   VelocitiesOld[i] + 0.5*v2 , TstepHalf );
 		Real v3  =  force * TimeStep;
 		Real k3  =  TimeStep * v3;
-		force    =  Force( PositionsOld[i] + 0.5*k3 , Velocity[i] + 0.5*v3 , TstepHalf );
+		force    =  Force( PositionsOld[i] + 0.5*k3 , 
+				   VelocitiesOld[i] + 0.5*v3 , TstepHalf );
 		Real v4  =  force * TimeStep;
 		Real k4  =  TimeStep * v2;
 		Positions[i] =  PositionsOld[i] + ( k1 +  2*k2  +  2*k3  + k4 ) / 6;
-		Velocity[i]  =  Velocity[i] + ( v1 +  2*v2  +  2*v3  + v4 ) / 6;
+		Velocities[i]  =  Velocities[i] + ( v1 +  2*v2  +  2*v3  + v4 ) / 6;
 	}
 }
 
@@ -119,7 +126,7 @@ void RungeKutta::GenerateRandomVelos( void ){
                        return dist( mersenne_engine );
                    };
 
-	std::generate( std::begin( Velocities ), Velocities.end() , gen );
+	std::generate( std::begin( Velocities[0] ), Velocities[0].end() , gen );
 	//for ( auto i = 0 ; i < Velocities.size() ; i++ ){
 	//	std::cout << Velocities[i] << std::endl;
 	//}
@@ -141,4 +148,17 @@ void RungeKutta::WriteOutput( std::string fname ){
 		}
 		outfile << std::endl;
 	}
+	outfile.close();
+}
+
+
+
+std::vector<std::vector<Real>> RungeKutta::GivePositions( void ){
+	return Positions;
+}
+
+
+
+std::vector<std::vector<Real>> RungeKutta::GiveVelocities( void ){
+	return Velocities;
 }
